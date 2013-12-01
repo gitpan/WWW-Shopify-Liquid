@@ -1,0 +1,21 @@
+use strict;
+use warnings;
+use Test::More;
+
+use_ok("WWW::Shopify::Liquid");
+use_ok("WWW::Shopify::Liquid::Operator");
+use_ok("WWW::Shopify::Liquid::Lexer");
+
+my $lexer = WWW::Shopify::Liquid->new->lexer;
+
+my @tokens = $lexer->parse_text('{{ product.handle }}');
+is(int(@tokens), 1);
+isa_ok($tokens[0], 'WWW::Shopify::Liquid::Token::Output');
+is(int(@{$tokens[0]->{core}}), 1);
+isa_ok($tokens[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::Variable');
+is(int(@{$tokens[0]->{core}->[0]->{core}}), 2);
+isa_ok($tokens[0]->{core}->[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::String');
+isa_ok($tokens[0]->{core}->[0]->{core}->[1], 'WWW::Shopify::Liquid::Token::String');
+
+
+done_testing();
