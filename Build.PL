@@ -16,8 +16,8 @@ my $build = Module::Build->new(
 		'List::Util' => 0,
 		'List::MoreUtils' => 0,
 		'Digest::MD5' => 0,
-		'Module::Find' => 0
-		
+		'Module::Find' => 0,
+		'Devel::StackTrace' => 0
 	}
 );
 $build->create_build_script;

@@ -4,7 +4,7 @@
       "Adam Harrison (adamdharrison@gmail.com)"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4003, CPAN::Meta::Converter version 2.132830",
+   "generated_by" : "Module::Build version 0.4005, CPAN::Meta::Converter version 2.132830",
    "license" : [
       "unknown"
    ],
@@ -22,6 +22,7 @@
       "runtime" : {
          "requires" : {
             "Clone" : "0",
+            "Devel::StackTrace" : "0",
             "Digest::MD5" : "0",
             "File::Slurp" : "0",
             "HTML::Strip" : "0",
@@ -37,7 +38,7 @@
    "provides" : {
       "WWW::Shopify::Liquid" : {
          "file" : "lib/WWW/Shopify/Liquid.pm",
-         "version" : "0.01"
+         "version" : "0.02"
       },
       "WWW::Shopify::Liquid::Element" : {
          "file" : "lib/WWW/Shopify/Liquid.pm"
@@ -422,5 +423,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.01"
+   "version" : "0.02"
 }
