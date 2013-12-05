@@ -4,7 +4,7 @@
       "Adam Harrison (adamdharrison@gmail.com)"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4005, CPAN::Meta::Converter version 2.132830",
+   "generated_by" : "Module::Build version 0.4003, CPAN::Meta::Converter version 2.132830",
    "license" : [
       "unknown"
    ],
@@ -38,7 +38,7 @@
    "provides" : {
       "WWW::Shopify::Liquid" : {
          "file" : "lib/WWW/Shopify/Liquid.pm",
-         "version" : "0.02"
+         "version" : "0.03"
       },
       "WWW::Shopify::Liquid::Element" : {
          "file" : "lib/WWW/Shopify/Liquid.pm"
@@ -347,7 +347,7 @@
          "file" : "lib/WWW/Shopify/Liquid/Tag/Cycle.pm"
       },
       "WWW::Shopify::Liquid::Tag::Enclosing" : {
-         "file" : "lib/WWW/Shopify/Liquid/Tag.pm"
+         "file" : "lib/WWW/Shopify/Liquid/Tag/Enclosing.pm"
       },
       "WWW::Shopify::Liquid::Tag::For" : {
          "file" : "lib/WWW/Shopify/Liquid/Tag/For.pm"
@@ -356,7 +356,7 @@
          "file" : "lib/WWW/Shopify/Liquid/Tag/Form.pm"
       },
       "WWW::Shopify::Liquid::Tag::Free" : {
-         "file" : "lib/WWW/Shopify/Liquid/Tag.pm"
+         "file" : "lib/WWW/Shopify/Liquid/Tag/Free.pm"
       },
       "WWW::Shopify::Liquid::Tag::If" : {
          "file" : "lib/WWW/Shopify/Liquid/Tag/If.pm"
@@ -423,5 +423,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.02"
+   "version" : "0.03"
 }

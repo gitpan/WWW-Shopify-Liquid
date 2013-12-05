@@ -34,7 +34,7 @@ use List::MoreUtils qw(firstidx part);
 use List::Util qw(first);
 use Module::Find;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 NAME
 
@@ -146,9 +146,11 @@ sub optimizer { return $_[0]->{optimizer}; }
 sub renderer { return $_[0]->{renderer}; }
 
 sub register_tag {
-	push(@{$_[0]->tags}, $_[1]);
-	$_[0]->lexer->register_tag($_[1]);
-	$_[0]->parser->register_tag($_[1]);
+	if (!$_[1]->abstract) {
+		push(@{$_[0]->tags}, $_[1]);
+		$_[0]->lexer->register_tag($_[1]);
+		$_[0]->parser->register_tag($_[1]);
+	}
 }
 sub register_filter {
 	push(@{$_[0]->filters}, $_[1]);

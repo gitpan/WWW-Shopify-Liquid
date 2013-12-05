@@ -6,7 +6,7 @@ build_requires: {}
 configure_requires:
   Module::Build: 0.38
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4005, CPAN::Meta::Converter version 2.132830'
+generated_by: 'Module::Build version 0.4003, CPAN::Meta::Converter version 2.132830'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -15,7 +15,7 @@ name: WWW-Shopify-Liquid
 provides:
   WWW::Shopify::Liquid:
     file: lib/WWW/Shopify/Liquid.pm
-    version: 0.02
+    version: 0.03
   WWW::Shopify::Liquid::Element:
     file: lib/WWW/Shopify/Liquid.pm
   WWW::Shopify::Liquid::Exception:
@@ -221,13 +221,13 @@ provides:
   WWW::Shopify::Liquid::Tag::Cycle:
     file: lib/WWW/Shopify/Liquid/Tag/Cycle.pm
   WWW::Shopify::Liquid::Tag::Enclosing:
-    file: lib/WWW/Shopify/Liquid/Tag.pm
+    file: lib/WWW/Shopify/Liquid/Tag/Enclosing.pm
   WWW::Shopify::Liquid::Tag::For:
     file: lib/WWW/Shopify/Liquid/Tag/For.pm
   WWW::Shopify::Liquid::Tag::Form:
     file: lib/WWW/Shopify/Liquid/Tag/Form.pm
   WWW::Shopify::Liquid::Tag::Free:
-    file: lib/WWW/Shopify/Liquid/Tag.pm
+    file: lib/WWW/Shopify/Liquid/Tag/Free.pm
   WWW::Shopify::Liquid::Tag::If:
     file: lib/WWW/Shopify/Liquid/Tag/If.pm
   WWW::Shopify::Liquid::Tag::Include:
@@ -282,4 +282,4 @@ requires:
   Module::Find: 0
   Scalar::Util: 0
   URI::Escape: 0
-version: 0.02
+version: 0.03
