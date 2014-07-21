@@ -13,8 +13,11 @@ use_ok("WWW::Shopify::Liquid::Parser");
 my $liquid = WWW::Shopify::Liquid->new;
 my $lexer = $liquid->lexer;
 my $parser = $liquid->parser;
+my $optimizer = $liquid->optimizer;
 
 my %errors = (
+"gfdsgdfgdfg {% if a %}" => ['WWW::Shopify::Liquid::Exception::Parser::NoClose', 1, 12],
+"{% for a in 1..1000000 %} {% endfor %}" => ['WWW::Shopify::Liquid::Exception::Parser::Arguments', 1],
 "{% if customer %}
 	{{ customer.first_name }}
 	{{ customer.lastname }}
@@ -48,7 +51,7 @@ nadsljkfhlksjdfhkjsdhf
 
 for (keys(%errors)) {
 	my $i = undef;
-	eval { $i = $parser->parse_tokens($lexer->parse_text($_)) };
+	eval { $i = $optimizer->optimize({}, $parser->parse_tokens($lexer->parse_text($_))) };
 	ok(!$i);
 	ok($@);
 	isa_ok($@, $errors{$_}->[0], $_);

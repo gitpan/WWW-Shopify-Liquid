@@ -36,11 +36,11 @@ $ast = $parser->parse_tokens($lexer->parse_text('{% if template ==\'page.blank\'
 	{% include "snippet-landing" %}
 {% endif %}'));
 isa_ok($ast, 'WWW::Shopify::Liquid::Tag::If');
-isa_ok($ast->{arguments}, 'WWW::Shopify::Liquid::Operator::Or');
-isa_ok($ast->{arguments}->{operands}->[0], 'WWW::Shopify::Liquid::Operator::Or');
-isa_ok($ast->{arguments}->{operands}->[0]->{operands}->[0], 'WWW::Shopify::Liquid::Operator::Equals');
-isa_ok($ast->{arguments}->{operands}->[0]->{operands}->[1], 'WWW::Shopify::Liquid::Operator::Contains');
-isa_ok($ast->{arguments}->{operands}->[1], 'WWW::Shopify::Liquid::Operator::Contains');
+isa_ok($ast->{arguments}->[0], 'WWW::Shopify::Liquid::Operator::Or');
+isa_ok($ast->{arguments}->[0]->{operands}->[0], 'WWW::Shopify::Liquid::Operator::Or');
+isa_ok($ast->{arguments}->[0]->{operands}->[0]->{operands}->[0], 'WWW::Shopify::Liquid::Operator::Equals');
+isa_ok($ast->{arguments}->[0]->{operands}->[0]->{operands}->[1], 'WWW::Shopify::Liquid::Operator::Contains');
+isa_ok($ast->{arguments}->[0]->{operands}->[1], 'WWW::Shopify::Liquid::Operator::Contains');
 
 	
 done_testing();

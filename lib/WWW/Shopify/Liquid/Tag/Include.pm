@@ -10,8 +10,8 @@ sub min_arguments { return 1; }
 sub verify {
 	my ($self) = @_;
 	die new WWW::Shopify::Liquid::Exception::Parser::Arguments($self) unless
-		$self->{arguments}->isa('WWW::Shopify::Liquid::Operator::With') ||
-		$self->{arguments}->isa('WWW::Shopify::Liquid::Token::String');
+		$self->{arguments}->[0]->isa('WWW::Shopify::Liquid::Operator::With') ||
+		$self->{arguments}->[0]->isa('WWW::Shopify::Liquid::Token::String');
 }
 
 sub process {

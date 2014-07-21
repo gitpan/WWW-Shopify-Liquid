@@ -1,8 +1,12 @@
 
 package WWW::Shopify::Liquid::Exception;
-sub line { return $_[0]->{line}->[0]; }
-sub column { return $_[0]->{line}->[1]; }
-sub stack {  }
+use Devel::StackTrace;
+use overload
+	'""' => sub { return $_[0]->english . ($_[0]->line ? " on line " . $_[0]->line : ''); };
+sub line { return $_[0]->{line} ? (ref($_[0]->{line}) && ref($_[0]->{line}) eq "ARRAY" ? $_[0]->{line}->[0] : $_[0]->{line}) : undef; }
+sub column { return $_[0]->{line} && ref($_[0]->{line}) && ref($_[0]->{line}) eq "ARRAY" ? $_[0]->{line}->[1] : undef; }
+sub stack { return $_[0]->{stack}; }
+sub english { return $_[0]->{error} ? $_[0]->{error} : "Unknown Error"; } 
 
 use Devel::StackTrace;
 use Scalar::Util qw(blessed);
@@ -14,7 +18,7 @@ sub new {
 		stack => Devel::StackTrace->new,
 	}, $package;
 	if (blessed($line)) {
-		if ($line->isa('WWW::Shopify::Liquid::Tag') || $line->isa('WWW::Shopify::Liquid::Token')) {
+		if ($line->isa('WWW::Shopify::Liquid::Tag') || $line->isa('WWW::Shopify::Liquid::Token') || $line->isa('WWW::Shopify::Liquid::Operator')) {
 			$self->{token} = $line;
 			$line = $line->{line};
 		}
@@ -77,6 +81,6 @@ sub english { return "Unimplemented method"; }
 
 package WWW::Shopify::Liquid::Exception::Renderer::Arguments;
 use base 'WWW::Shopify::Liquid::Exception::Renderer';
-sub english { return "Wrong type?number of arguments."; }
+sub english { return "Wrong type? Number of arguments."; }
 
 1;

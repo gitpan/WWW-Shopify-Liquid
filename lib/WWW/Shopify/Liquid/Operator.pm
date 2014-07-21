@@ -12,12 +12,14 @@ sub new {
 }
 sub operands { my $self = shift; $self->{operands} = [@_]; return $self->{operands}; }
 
+sub tokens { return map { $_->tokens } (@{$_[0]->{operands}}) }
+
 sub process {
 	my ($self, $hash, $action) = @_;
 	my ($op1, $op2) = ($self->{operands}->[0], $self->{operands}->[1]);
 	$op1 = $op1->$action($hash) unless $self->is_processed($op1);
 	$op2 = $op2->$action($hash) unless $self->is_processed($op2);
-	if (!$self->is_processed($op1) || !$self->is_processed($op2)) {
+	if ((!$self->is_processed($op1) || !$self->is_processed($op2)) && $action eq "optimize") {
 		$self->{operands} = [$op1, $op2];
 		return $self;
 	}

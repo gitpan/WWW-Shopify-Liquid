@@ -30,14 +30,14 @@ sub interpret_inner_tokens {
 	for (0..$#tokens) {
 		$token = $tokens[$_];
 		die new WWW::Shopify::Liquid::Exception::Parser($self, "Requires a constant when using a when statement.") if $token->[0]->tag eq "when" &&
-			(!$token->[0]->{arguments} || (
-				ref($token->[0]->{arguments}) ne "WWW::Shopify::Liquid::Token::String" &&
-				ref($token->[0]->{arguments}) ne "WWW::Shopify::Liquid::Token::Number")
+			(!$token->[0]->{arguments}->[0] || (
+				ref($token->[0]->{arguments}->[0]) ne "WWW::Shopify::Liquid::Token::String" &&
+				ref($token->[0]->{arguments}->[0]) ne "WWW::Shopify::Liquid::Token::Number")
 			);
 		die new WWW::Shopify::Liquid::Exception::Parser($self, "Else statements can only be used in the last block of a case statement.") if
 			$token->[0]->tag eq "else" && $_ < $#tokens;
 		if ($token->[0]->tag eq "when") {
-			$self->{paths}->{$token->[0]->{arguments}->{core}} = $token->[1];
+			$self->{paths}->{$token->[0]->{arguments}->[0]->{core}} = $token->[1];
 		}
 		else {
 			$self->{else} = $token->[1];
@@ -47,7 +47,7 @@ sub interpret_inner_tokens {
 
 sub render {
 	my ($self, $hash) = @_;
-	my $arguments = $self->{arguments};
+	my $arguments = $self->{arguments}->[0];
 	$arguments = $arguments->render($hash) if !$self->is_processed($arguments);
 	my $path = $self->{paths}->{$arguments} ? $self->{paths}->{$arguments} : $self->{else};
 	$path = $path->render($hash) if $path && !$self->is_processed($path);
@@ -56,8 +56,8 @@ sub render {
 
 sub optimize {
 	my ($self, $hash) = @_;
-	$self->{arguments} = $self->{arguments}->optimize($hash) if !$self->is_processed($self->{arguments});
-	my $key = $self->{arguments};
+	$self->{arguments}->[0] = $self->{arguments}->[0]->optimize($hash) if !$self->is_processed($self->{arguments}->[0]);
+	my $key = $self->{arguments}->[0];
 	if ($self->is_processed($key)) {
 		my $path = exists $self->{paths}->{$key} ? $self->{paths}->{$key} : $self->{else};
 		return $self->is_processed($path) ? $path : $path->optimize($hash);

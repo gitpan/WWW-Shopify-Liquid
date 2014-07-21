@@ -1,0 +1,152 @@
+use strict;
+use warnings;
+use Test::More;
+
+use_ok("WWW::Shopify::Liquid");
+use_ok("WWW::Shopify::Liquid::Operator");
+use_ok("WWW::Shopify::Liquid::Lexer");
+use_ok("WWW::Shopify::Liquid::Parser");
+use_ok("WWW::Shopify::Liquid::Optimizer");
+use_ok("WWW::Shopify::Liquid::Renderer");
+my $liquid = WWW::Shopify::Liquid->new;
+my $lexer = $liquid->lexer;
+my $parser = $liquid->parser;
+my $optimizer = $liquid->optimizer;
+my $renderer = $liquid->renderer;
+
+use WWW::Shopify::Liquid qw(liquid_render_text);
+
+my $text = liquid_render_text({ test => "a" }, "{% assign test = 2 %}{{ test }}"); is($text, '2');
+
+$text = liquid_render_text({ files => [{ extension => 'asd' }, { extension => 'fgdfg'}] }, "{% assign has_pdf = 0 %}{% for file in files %}{% if file.extension == 'pdf' %}{% assign has_pdf = 1%}{% endif %}{% endfor %} {{ has_pdf }}");
+is($text, " 0");
+
+$text = liquid_render_text({ files => [{ extension => 'asd' }, { extension => 'pdf'}] }, "{% assign has_pdf = 0 %}{% for file in files %}{% if file.extension == 'pdf' %}{% assign has_pdf = 1%}{% endif %}{% endfor %} {{ has_pdf }}");
+is($text, " 1");
+
+$text = liquid_render_text({ files => [{ extension => "pdf" }, { extension => "wrd" }, { extension => "png" }] }, '{{ files.first.extension }}|{{files.last.extension}}');
+my ($first, $last) = split(/\|/, $text);
+is($first, "pdf");
+is($last, "png");
+
+use DateTime;
+
+my $date = DateTime->now;
+$text = liquid_render_text({ date => $date }, 'a{{ date }}');
+is($text, "a" . $date->iso8601);
+
+$text = liquid_render_text({ date => $date }, 'a{{ date | date: "%Y" }}');
+is($text, "a" . $date->strftime("%Y"));
+
+$date = DateTime->new(year => int(rand()*14)+2000, month => int(rand()*12)+1, day => int(rand()*26)+1);
+$text = liquid_render_text({ date => $date }, 'a{{ date }}');
+is($text, "a" . $date->iso8601);
+
+$text = liquid_render_text({ date => $date }, 'a{{ date | date: "%Y" }}');
+is($text, "a" . $date->strftime("%Y"));
+
+
+$date = DateTime->new(year => int(rand()*14)+2000, month => int(rand()*12)+1, day => int(rand()*26)+1);
+my $ast = $liquid->parse_tokens($liquid->parse_text("a{{ date | date: '%Y' }}"));
+
+$text = $liquid->render_ast({ date => $date }, $ast);
+is($text, "a" . $date->strftime("%Y"));
+
+$date = DateTime->new(year => int(rand()*14)+2000, month => int(rand()*12)+1, day => int(rand()*26)+1);
+$text = $liquid->render_ast({ date => $date }, $ast);
+is($text, "a" . $date->strftime("%Y"));
+
+$ast = $liquid->parse_tokens($liquid->parse_text("{% for a in b %}{{ a }}{% endfor %}"));
+$text = $liquid->render_ast({ b => [1..10] }, $ast);
+is($text, join("", 1..10));
+
+$text = $liquid->render_ast({ b => [10..20] }, $ast);
+is($text, join("", 10..20));
+
+$ast = $liquid->parse_tokens($liquid->parse_text("{% assign a.b = 3 %}{{ a.b }}"));
+my $hash;
+($text, $hash) = $liquid->render_ast({ }, $ast);
+is($text, 3);
+ok($hash->{a});
+is($hash->{a}->{b}, 3);
+
+# OOO
+is($liquid->render_text({}, "{{ 1 + 6 * 2 }}"), 13);
+is($liquid->render_text({}, "{{ 2 * 6 + 2 }}"), 14);
+
+$hash = { global => { total_orders => 100 }, order => { total_price => 400 } };
+($text, $hash) = $liquid->render_text($hash, "{% if global.total_orders > 10000 %}{% assign global.total_orders = 0 %}{% endif %}{% assign global.total_orders = global.total_orders + order.total_price %}{{ global.total_orders }}");
+is($text, '500');
+is($hash->{global}->{total_orders}, 500);
+($text, $hash) = $liquid->render_text($hash, "{% if global.total_orders > 10000 %}{% assign global.total_orders = 0 %}{% endif %}{% assign global.total_orders = global.total_orders + order.total_price %}{{ global.total_orders }}");
+is($text, '900');
+is($hash->{global}->{total_orders}, 900);
+
+is($liquid->render_text({}, '{% unless cart.attributes.registry_id == "1" %}success{% endunless %}'), "success");
+
+is($liquid->render_text({}, '{% assign a = "A" + 2 %}{{ a }}'), "A2");
+is($liquid->render_text({}, '{% assign a = 1 + 2 %}{{ a }}'), "3");
+is($liquid->render_text({}, "{% assign a = 1 %}{% assign field_name = 'Runner #' + a + ' (full name)' %}{{ field_name }}"), "Runner #1 (full name)");
+
+use Data::Dumper;
+
+my $code = "{% for note in order.note_attributes %}{% if note.name == 'Edition' %}{% assign notes = note.value | split: '\\n' %}{% for line in notes %}{% if line contains line_item.title %}{% assign parts = line | split: 'edition: ' %}{{ parts | last }}{% endif %}{% endfor %}{% endif %}{% endfor %}";
+is($liquid->render_text({
+	order => {
+		note_attributes => [
+			{ name => 'a', value => 'b' },
+			{ name => 'Edition', value => 'The Thoughts in My Head #30: Free Spirit - 11x14 / Unframed edition: 3/250' }
+		]
+	},
+	line_item => {
+		title => 'The Thoughts in My Head #30: Free Spirit - 11x14 / Unframed',
+	}
+}, $code), '3/250');
+
+use utf8;
+# utf8 checking.
+is($liquid->render_text({ a => '✓' }, "{{ a }}"), "✓");
+
+is($liquid->render_text({ a => "3 months" }, "{% if a contains 'month' %}{{ a }}{% endif %}"), "3 months");
+is($liquid->render_text({ a => "3 asdfddsafg" }, "{% if a contains 'month' %}{{ a }}{% endif %}"), "");
+
+is($liquid->render_text({ a => { b => [1, 4,6] } }, "{% if a.b.size > 2 %}{{ a.b.size }}{% endif %}"), "3");
+
+my $address = {
+	address1 => "1121 N. Taylor St. Apt. C",
+	address2 => "",
+	city => "Arlington",
+	company =>  undef,
+	country  => "United States",
+	country_code => "US",
+	first_name  => "Laura",
+	id => 329155013,
+	last_name => "Zamperini",
+	name => "Laura Zamperini",
+	phone => "",
+	province => "Virginia",
+	province_code => "VA",
+	zip => '22201'
+};
+
+use File::Slurp;
+# The version of this can change the MD5 hash, as it writes its version # into the first byte.
+use Storable qw(freeze);
+$Storable::canonical = 1;
+write_file("/tmp/test2", freeze($address));
+
+is($liquid->render_text({ customer => { default_address => $address } }, "{{ customer.default_address | md5 }}"), "dd243d6d424e6a788fa13b5fe8ab9c4f");
+
+is($liquid->render_text({ created_at => DateTime->now, updated_at => DateTime->now }, "{% if created_at == updated_at %}1{% else %}0{% endif %}"), 1);
+
+is($liquid->render_text({ a => "asjfskldghklfjg" }, "{% if a =~ 'asj' %}1{% if a =~ 'aaa' %}1{% else %}0{% endif %}{% else %}0{% endif %}"), '10');
+is($liquid->render_text({ a => "asjfskldghklfjg" }, "{% if a =~ '(afbdfbdf|asj)' %}1{% else %}0{% endif %}"), '1');
+is($liquid->render_text({ order => { line_items => [{ sku => 'a' }] } }, "{% for line_item in order.line_items %}{% if line_item.sku =~ '(a|asj)' %}1{% endif %}{% endfor %}"), '1');
+
+is($liquid->render_text({}, "{% for line_item in order.line_items %}{% if line_item.sku =~ 'a' %}1{% endif %}{% endfor %}"), '');
+
+is($liquid->render_text({}, "{{ 'asfdsdfsa.jpg' | product_img_url: 'large' }}"), 'asfdsdfsa_large.jpg');
+
+is($liquid->render_text({ today => DateTime->today,  now => DateTime->now }, "{{ (now - today) / 3600 | floor }}"), int((DateTime->now->epoch - DateTime->today->epoch) / 3600));
+
+done_testing();

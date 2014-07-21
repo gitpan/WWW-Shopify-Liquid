@@ -24,7 +24,7 @@ $ast = $parser->parse_tokens($lexer->parse_text("{% if a %}{% if b %}fasdfd{% el
 ok($ast);
 isa_ok($ast, 'WWW::Shopify::Liquid::Tag::If');
 isa_ok($ast->{true_path}, 'WWW::Shopify::Liquid::Tag::If');
-isa_ok($ast->{arguments}, 'WWW::Shopify::Liquid::Token::Variable');
+isa_ok($ast->{arguments}->[0], 'WWW::Shopify::Liquid::Token::Variable');
 
 eval {
 	$ast = $parser->parse_tokens($lexer->parse_text("{% case a %} {% when 'b' %}gfgdfg{% else %}asdf{% endcase %}"));

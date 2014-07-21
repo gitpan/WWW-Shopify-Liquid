@@ -6,7 +6,7 @@ build_requires: {}
 configure_requires:
   Module::Build: 0.38
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4003, CPAN::Meta::Converter version 2.132830'
+generated_by: 'Module::Build version 0.4005, CPAN::Meta::Converter version 2.132830'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -15,7 +15,7 @@ name: WWW-Shopify-Liquid
 provides:
   WWW::Shopify::Liquid:
     file: lib/WWW/Shopify/Liquid.pm
-    version: 0.03
+    version: 0.04
   WWW::Shopify::Liquid::Element:
     file: lib/WWW/Shopify/Liquid.pm
   WWW::Shopify::Liquid::Exception:
@@ -58,6 +58,8 @@ provides:
     file: lib/WWW/Shopify/Liquid/Filter/Camelize.pm
   WWW::Shopify::Liquid::Filter::Capitalize:
     file: lib/WWW/Shopify/Liquid/Filter/Capitalize.pm
+  WWW::Shopify::Liquid::Filter::Ceil:
+    file: lib/WWW/Shopify/Liquid/Filter/Ceil.pm
   WWW::Shopify::Liquid::Filter::CollectionImgUrl:
     file: lib/WWW/Shopify/Liquid/Filter/CollectionImgUrl.pm
   WWW::Shopify::Liquid::Filter::CustomerLoginLink:
@@ -76,6 +78,8 @@ provides:
     file: lib/WWW/Shopify/Liquid/Filter/Escape.pm
   WWW::Shopify::Liquid::Filter::First:
     file: lib/WWW/Shopify/Liquid/Filter/First.pm
+  WWW::Shopify::Liquid::Filter::Floor:
+    file: lib/WWW/Shopify/Liquid/Filter/Floor.pm
   WWW::Shopify::Liquid::Filter::Handleize:
     file: lib/WWW/Shopify/Liquid/Filter/Handleize.pm
   WWW::Shopify::Liquid::Filter::ImgTag:
@@ -198,6 +202,8 @@ provides:
     file: lib/WWW/Shopify/Liquid/Operator/Pipe.pm
   WWW::Shopify::Liquid::Operator::Plus:
     file: lib/WWW/Shopify/Liquid/Operator/Plus.pm
+  WWW::Shopify::Liquid::Operator::Regex:
+    file: lib/WWW/Shopify/Liquid/Operator/Regex.pm
   WWW::Shopify::Liquid::Operator::With:
     file: lib/WWW/Shopify/Liquid/Operator/With.pm
   WWW::Shopify::Liquid::Optimizer:
@@ -270,8 +276,11 @@ provides:
     file: lib/WWW/Shopify/Liquid/Lexer.pm
   WWW::Shopify::Liquid::Token::Variable:
     file: lib/WWW/Shopify/Liquid/Lexer.pm
+  WWW::Shopify::Liquid::Token::Variable::Processing:
+    file: lib/WWW/Shopify/Liquid/Lexer.pm
 requires:
   Clone: 0
+  Data::Compare: 0
   Devel::StackTrace: 0
   Digest::MD5: 0
   File::Slurp: 0
@@ -282,4 +291,4 @@ requires:
   Module::Find: 0
   Scalar::Util: 0
   URI::Escape: 0
-version: 0.03
+version: 0.04

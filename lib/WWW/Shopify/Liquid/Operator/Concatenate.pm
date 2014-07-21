@@ -9,6 +9,8 @@ use base 'WWW::Shopify::Liquid::Operator';
 sub symbol { return (); }
 sub operate {
 	my ($self, $hash, $action, $op1, $op2) = @_;
+	$op1 = '' unless defined $op1;
+	$op2 = '' unless defined $op2;
 	return $op1 . $op2;
 }
 sub new { return bless { }, $_[0]; }

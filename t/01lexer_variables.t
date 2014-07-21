@@ -17,5 +17,14 @@ is(int(@{$tokens[0]->{core}->[0]->{core}}), 2);
 isa_ok($tokens[0]->{core}->[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::String');
 isa_ok($tokens[0]->{core}->[0]->{core}->[1], 'WWW::Shopify::Liquid::Token::String');
 
+@tokens = $lexer->parse_text("{{ customer['test']['b'] }}");
+is(int(@tokens), 1);
+isa_ok($tokens[0], 'WWW::Shopify::Liquid::Token::Output');
+is(int(@{$tokens[0]->{core}}), 1);
+isa_ok($tokens[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::Variable');
+is(int(@{$tokens[0]->{core}->[0]->{core}}), 3);
+isa_ok($tokens[0]->{core}->[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::String');
+isa_ok($tokens[0]->{core}->[0]->{core}->[1], 'WWW::Shopify::Liquid::Token::String');
+isa_ok($tokens[0]->{core}->[0]->{core}->[2], 'WWW::Shopify::Liquid::Token::String');
 
 done_testing();

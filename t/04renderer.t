@@ -37,5 +37,19 @@ $text = liquid_render_text({ test => "a" }, "{% assign test = 2 %}{{ test }}"); 
 $text = liquid_render_text({ test => "a" }, "{% for a in (1..10) %}{% case a %} {% when 10 %}A {% when 1 %}B{% else %}C{% endcase %}{% endfor %}"); is($text, 'BCCCCCCCCA ');
 
 
+$text = liquid_render_text({ files => [{ extension => "pdf" }, { extension => "wrd" }, { extension => "png" }] }, "{% for file in files %}{{ file.extension }}{% endfor %}");
+is($text, 'pdfwrdpng');
+
+$text = liquid_render_text({ instructions => "" }, "{% if instructions %}A{% else %}B{% endif %}"); is($text, 'B');
+
+$text = liquid_render_text({ duration => "3 months" }, "{{ duration | split: ' ' | first }}"); is($text, '3');
+
+$text = liquid_render_text({ 
+	global => { customer_address => { 1234 => 'asd' } }, 
+	customer => { id => 1234 } 
+}, '{{ global.customer_address[customer.id] }}');
+is($text, 'asd');
+
+$text = liquid_render_text({ test_array => [{ src => "asdasf" }, { src => "dfhdfh" }, { src => "5135" }] }, "{{ test_array[1].src }}"); is($text, 'dfhdfh');
 
 done_testing();

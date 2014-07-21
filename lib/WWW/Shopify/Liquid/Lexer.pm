@@ -7,6 +7,7 @@ package WWW::Shopify::Liquid::Token;
 use base 'WWW::Shopify::Liquid::Element';
 sub new { return bless { line => $_[1], core => $_[2] }, $_[0]; };
 sub stringify { return $_[0]->{core}; }
+sub tokens { return $_[0]; }
 
 package WWW::Shopify::Liquid::Token::Operator;
 use base 'WWW::Shopify::Liquid::Token';
@@ -29,18 +30,46 @@ sub process { my ($self, $hash) = @_; return $self->{core}; }
 package WWW::Shopify::Liquid::Token::Variable;
 use base 'WWW::Shopify::Liquid::Token::Operand';
 
+use Data::Dumper;
+use Scalar::Util qw(looks_like_number);
+
 sub new { my $package = shift; return bless { line => shift, core => [@_] }, $package; };
 sub process {
 	my ($self, $hash, $action) = @_;
 	my $place = $hash;
+	return $self->{core} if $self->is_processed($self->{core});
 	foreach my $part (@{$self->{core}}) {
-		my $key = $part->$action($hash);
-		return $self unless $key && ref($place) eq "HASH" && exists $place->{$key};
-		$place = $place->{$key};
+		if (ref($part) eq 'WWW::Shopify::Liquid::Token::Variable::Processing') {
+			$place = $part->$action($hash, $place);
+		}
+		else {
+			my $key = $self->is_processed($part) ? $part : $part->$action($hash);
+			return $self unless defined $key && $key ne '';
+			if (ref($place) eq "HASH" && exists $place->{$key}) {
+				$place = $place->{$key};
+			} elsif (ref($place) eq "ARRAY" && looks_like_number($key) && defined $place->[$key]) {
+				$place = $place->[$key];
+			} else {
+				return $self;
+			}
+			
+		}
 	}
 	return $place;
 }
 sub stringify { return join(".", map { $_->stringify } @{$_[0]->{core}}); }
+
+package WWW::Shopify::Liquid::Token::Variable::Processing;
+use base 'WWW::Shopify::Liquid::Token::Operand';
+use Data::Dumper;
+sub process {
+	my ($self, $hash, $argument, $action) = @_;
+	return $self if !$self->is_processed($argument);
+	my $result = $self->{core}->operate($hash, $argument);
+	return $self if !$self->is_processed($result);
+	return $result;
+}
+
 
 package WWW::Shopify::Liquid::Token::Grouping;
 use base 'WWW::Shopify::Liquid::Token::Operand';
@@ -64,6 +93,7 @@ package WWW::Shopify::Liquid::Token::Tag;
 use base 'WWW::Shopify::Liquid::Token';
 sub new { return bless { line => $_[1], tag => $_[2], arguments => $_[3] }, $_[0] };
 sub tag { return $_[0]->{tag}; }
+sub stringify { return $_[0]->tag; }
 
 package WWW::Shopify::Liquid::Token::Output;
 use base 'WWW::Shopify::Liquid::Token';
@@ -77,13 +107,18 @@ package WWW::Shopify::Liquid::Lexer;
 use base 'WWW::Shopify::Liquid::Pipeline';
 use Scalar::Util qw(looks_like_number);
 
-sub new { return bless { operators => {}, lexing_halters => {} }, $_[0]; }
+sub new { return bless { operators => {}, lexing_halters => {}, transparent_filters => {} }, $_[0]; }
 sub operators { return $_[0]->{operators}; }
 sub register_operator {	$_[0]->{operators}->{$_} = $_[1] for ($_[1]->symbol); } 
 sub register_tag {
 	my ($self, $package) = @_;
 	$self->{lexing_halters}->{$package->name} = $package if $package->is_enclosing && $package->inner_halt_lexing;
 }
+sub register_filter {
+	my ($self, $package) = @_;
+	$self->{transparent_filters}->{$package->name} = $package if ($package->transparent);
+}
+sub transparent_filters { return $_[0]->{transparent_filters}; }
 
 sub parse_token {
 	my ($self, $line, $token) = @_;
@@ -97,24 +132,28 @@ sub parse_token {
 	return WWW::Shopify::Liquid::Token::Separator->new($line, $token) if ($token eq ":" || $token eq ",");
 	# We're a variable. Let's see what's going on. Split along non quoted . and [ ] fields.
 	my ($squot, $dquot, $start, @parts) = (0,0,0);
+	#  customer['test']['b'] 
+	my $open_bracket = 0;
 	while ($token =~ m/(\.|\[|\]|(?<!\\)\"|(?<!\\)\'|\b$)/g) {
 		my $sym = $&;
 		if (!$squot && !$dquot) {
-			if ($sym eq "." || $sym eq "]" || $sym eq "[" || !$sym) {
+			$open_bracket-- if ($sym && $sym eq "]");
+			if (($sym eq "." || $sym eq "]" || $sym eq "[" || !$sym) && $open_bracket == 0) {
 				my $contents = substr($token, $start, $-[0] - $start);
 				if (defined $contents && $contents ne "") {
-					my $variable = undef;
+					my @variables = ();
 					if (!$sym || $sym eq "." || $sym eq "[") {
-						#$variable = $self->processing_variables->{$contents} ? WWW::Shopify::Liquid::Token::Variable::Processing->new($contents) : WWW::Shopify::Liquid::Token::String->new($contents);
-						$variable = WWW::Shopify::Liquid::Token::String->new($line, $contents);
+						@variables = $self->transparent_filters->{$contents} ? WWW::Shopify::Liquid::Token::Variable::Processing->new($line, $self->transparent_filters->{$contents}) : WWW::Shopify::Liquid::Token::String->new($line, $contents);
 					}
 					elsif ($sym eq "]") {
-						$variable = $self->parse_expression($line, $contents);
+						@variables = $self->parse_expression($line, $contents);
 					}
-					push(@parts, $variable) if defined $variable;
+					push(@parts, @variables) if int(@variables) > 0;
 				}
 			}
-			$start = $+[0] if $sym ne '"' && $sym ne "'";
+			$start = $+[0] if $sym ne '"' && $sym ne "'" && !$open_bracket;
+			$open_bracket++ if ($sym && $sym eq "[");
+			
 		}
 		$squot = !$squot if $token eq "'";
 		$dquot = !$dquot if $token eq '"';
@@ -122,7 +161,7 @@ sub parse_token {
 	return WWW::Shopify::Liquid::Token::Variable->new($line, @parts);
 }
 
-# Returns a single token repsending the whole a pression.
+# Returns a single token repsending the whole a expression.
 sub parse_expression {
 	my ($self, $line, $exp) = @_;
 	return () if !defined $exp || $exp eq '';
@@ -157,12 +196,19 @@ sub parse_expression {
 		$dquot = !$dquot if ($rc eq '"' && !$squot);
 	}
 	die WWW::Shopify::Liquid::Exception::Lexer::UnbalancedBrace->new($line) unless $level == 0;
-	return @tokens;
+	# Go through and combine any -1 from OP NUM to NUM.
+	my @ids = grep { 
+		$tokens[$_]->isa('WWW::Shopify::Liquid::Token::Number') &&
+		$tokens[$_-1]->isa('WWW::Shopify::Liquid::Token::Operator') && $tokens[$_-1]->{core} eq "-" &&
+		($_ == 1 || $tokens[$_-2]->isa('WWW::Shopify::Liquid::Token::Separator'))
+	} 1..$#tokens;
+	for (@ids) { $tokens[$_]->{core} *= -1; $tokens[$_-1] = undef; } 
+	return grep { defined $_ } @tokens;
 }
 
 sub parse_text {
 	my ($self, $text) = @_;
-	return () unless $text;
+	return () unless defined $text;
 	my @tokens = ();
 	my $start = 0;
 	my $line = 1;
@@ -172,6 +218,8 @@ sub parse_text {
 	my $start_line = 1;
 	my $start_column = 0;
 	my $line_position = 0;
+	
+	return (WWW::Shopify::Liquid::Token::Text->new(1, '')) if $text eq '';
 	
 	# No need to worry about quotations; liquid overrides everything.
 	while ($text =~ m/(?:(?:{%\s*(\w+)\s*(.*?)\s*%})|(?:{{\s*(.*?)\s*}})|(\n)|$)/g) {
@@ -214,7 +262,7 @@ sub unparse_token {
 	my ($self, $token) = @_;
 	return '' unless $token;
 	return join(".", map { $_->{core} } @{$token->{core}}) if $token->isa('WWW::Shopify::Liquid::Token::Variable');
-	return "(" . join(" ", map { $self->unparse_token($_); } @{$token->{members}}) . ")" if $token->isa('WWW::Shopify::Liquid::Token::Grouping');
+	return "(" . join("", map { $self->unparse_token($_); } @{$token->{members}}) . ")" if $token->isa('WWW::Shopify::Liquid::Token::Grouping');
 	return $token->{core};
 }
 

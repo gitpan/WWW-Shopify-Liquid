@@ -20,7 +20,15 @@ sub render {
 sub optimize { return shift->process(@_, "optimize"); }
 sub process { return $_[0]; }
 
-sub is_processed { return !ref($_[1]) || ref($_[1]) eq "ARRAY" || ref($_[1]) eq "HASH"; }
+use List::Util qw(first);
+use Scalar::Util qw(looks_like_number);
+
+sub is_processed { return !ref($_[1]) || (ref($_[1]) eq "ARRAY" && int(grep { !$_[0]->is_processed($_) } @{$_[1]}) == 0) || ref($_[1]) eq "HASH" || ref($_[1]) eq "DateTime"; }
+sub ensure_numerical { 
+	return $_[1] if defined $_[1] && looks_like_number($_[1]); 
+	return $_[1] if ref($_[1]) && ref($_[1]) eq "DateTime";
+	return 0;
+}
 
 package WWW::Shopify::Liquid;
 use Clone qw(clone);
@@ -34,7 +42,7 @@ use List::MoreUtils qw(firstidx part);
 use List::Util qw(first);
 use Module::Find;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 NAME
 
@@ -49,7 +57,7 @@ see L<Template::Liquid> for one that emulates all the quirks and ridiculousness 
 (Meaning no actual arithemtic is literal tags without filters, insanity on acutal number processing and conversion,
 insane array handling, no real optimization, or partial AST reduction, etc.., etc..).
 
-Combines a lexer, parser, optimizer and a render. Can be invoked in any number of ways. Simplest is to use the sub this module exports,
+Combines a lexer, parser, optimizer and a renderer. Can be invoked in any number of ways. Simplest is to use the sub this module exports,
 liquid_render_file.
 
 	use WWW::Shopify::Liquid qw/liquid_render_file/;
@@ -63,7 +71,7 @@ liquid (see below), and an OO interface.
 This method represents the whole pipeline, so to get an overview of this module, we'll describe it here.
 Fundamentally, what liquid_render_file does, is it slurps the whole file into a string, and then passes that string to
 the lexer. This then generates a stream of tokens. These tokens are then transformed into an abstract syntax tree, by the
-the paser if the syntax is valid. This AST represents the canonical form of the file, and can, from here, either
+the parser if the syntax is valid. This AST represents the canonical form of the file, and can, from here, either
 transformed back into almost the same file, statically optimized to remove any unecessary calls, or partially optimized to
 remove branches of the tree for which you have variables to fill at this time, though both these steps are optional.
 
@@ -88,7 +96,7 @@ You can invoke each stage individually if you like.
 	$ast = $liquid->optimizer->optimize({ a => 2 }, $ast);
 	
 	# Finally, you can render.
-	$result = $liquid->renderer->Render({ b => 3 }, $ast);
+	$result = $liquid->renderer->render({ b => 3 }, $ast);
 	
 If you're simply looking to check whether a liquid file is valid, you can do the following:
 
@@ -101,7 +109,7 @@ If sucessful, it'll return nothing, if it fails, it'll throw an exception, detai
 
 =head1 STATUS
 
-This module is currently in early beta. That means that while it is able to parse and validate liquid documents from Shopify, it may
+This module is currently in beta. That means that while it is able to parse and validate liquid documents from Shopify, it may
 be missing a few tags. In addition to this, the optimizer is not yet fully complete; it does not do advanced optimizations such as loop
 unrolling. However, it does do partial tree rendering. Essentially what's missing is the ability to generate liquid from syntax trees.
 
@@ -184,7 +192,7 @@ sub parse_text { my ($self, $text) = @_; return $self->parse_tokens($self->token
 
 sub verify_text { my ($self, $text) = @_; $self->parse_tokens($self->parse_text($text)); }
 sub verify_file { my ($self, $file) = @_; $self->verify_text(scalar(read_file($file))); }
-sub render_text { my ($self, $hash, $text) = @_; return $self->render_ast($hash, $self->optimize_ast($hash, $self->parse_tokens($self->tokenize_text($text)))); }
+sub render_text { my ($self, $hash, $text) = @_; return $self->render_ast($hash, $self->parse_tokens($self->tokenize_text($text))); }
 sub render_file { my ($self, $hash, $file) = @_; return $self->render_text($hash, scalar(read_file($file))); }
 
 use Exporter;
@@ -194,6 +202,51 @@ sub liquid_render_text { my ($hash, $text) = @_; my $self = WWW::Shopify::Liquid
 sub liquid_verify_text { my ($text) = @_; my $self = WWW::Shopify::Liquid->new; $self->verify_text($text); }
 sub liquid_render_file { my ($hash, $file) = @_; my $self = WWW::Shopify::Liquid->new; return $self->render_file($hash, $file); }
 sub liquid_verify_file { my ($file) = @_; my $self = WWW::Shopify::Liquid->new; $self->verify_file($file); }
+
+sub liquify_item {
+	my ($self, $item) = @_;
+	die new WWW::Shopify::Liquid::Exception("Can only liquify shopify objects.") unless ref($item) && $item->isa('WWW::Shopify::Model::Item');
+	
+	my $fields = $item->fields();
+	my $final = {};
+	foreach my $key (keys(%$item)) {
+		next unless exists $fields->{$key};
+		if ($fields->{$key}->is_relation()) {
+			if ($fields->{$key}->is_many()) {
+				# Since metafields don't come prepackaged, we don't get them. Unless we've already got them.
+				next if $key eq "metafields" && !$item->{metafields};
+				my @results = $item->$key();
+				if (int(@results)) {
+					$final->{$key} = [map { $_->to_json() } @results];
+				}
+				else {
+					$final->{$key} = [];
+				}
+			}
+			if ($fields->{$key}->is_one() && $fields->{$key}->is_reference()) {
+				if (defined $item->$key()) {
+					# This is inconsistent; this if is a stop-gap measure.
+					# Getting directly from teh database seems to make this automatically an id.
+					if (ref($item->$key())) {
+						$final->{$key} = $item->$key()->id();
+					}
+					else {
+						$final->{$key} = $item->$key();
+					}
+				}
+				else {
+					$final->{$key} = undef;
+				}
+			}
+			$final->{$key} = ($item->$key ? $item->$key->to_json() : undef) if ($fields->{$key}->is_one() && $fields->{$key}->is_own());
+		} elsif (ref($fields->{$key}) !~ m/Date$/) {
+			$final->{$key} = $fields->{$key}->to_shopify($item->$key);
+		} else {
+			$final->{$key} = $item->$key;
+		}
+	}
+	return $final;
+}
 
 
 =head1 SEE ALSO

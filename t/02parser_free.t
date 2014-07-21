@@ -20,10 +20,10 @@ isa_ok($ast->{contents}->{operands}->[1], 'WWW::Shopify::Liquid::Tag::Output');
 $ast = $parser->parse_tokens($lexer->parse_text("{% include 'ast' %}"));
 ok($ast);
 isa_ok($ast, 'WWW::Shopify::Liquid::Tag::Include');
-isa_ok($ast->{arguments}, 'WWW::Shopify::Liquid::Token::String');
+isa_ok($ast->{arguments}->[0], 'WWW::Shopify::Liquid::Token::String');
 $ast = $parser->parse_tokens($lexer->parse_text("{% include 'ast' with 'ahlfjdkjg' %}"));
 isa_ok($ast, 'WWW::Shopify::Liquid::Tag::Include');
-isa_ok($ast->{arguments}, 'WWW::Shopify::Liquid::Operator::With');
+isa_ok($ast->{arguments}->[0], 'WWW::Shopify::Liquid::Operator::With');
 ok($ast);
 
 ok(1);

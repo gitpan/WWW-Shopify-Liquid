@@ -6,6 +6,7 @@ lib/WWW/Shopify/Liquid/Filter/Append.pm
 lib/WWW/Shopify/Liquid/Filter/AssetUrl.pm
 lib/WWW/Shopify/Liquid/Filter/Camelize.pm
 lib/WWW/Shopify/Liquid/Filter/Capitalize.pm
+lib/WWW/Shopify/Liquid/Filter/Ceil.pm
 lib/WWW/Shopify/Liquid/Filter/CollectionImgUrl.pm
 lib/WWW/Shopify/Liquid/Filter/CustomerLoginLink.pm
 lib/WWW/Shopify/Liquid/Filter/Date.pm
@@ -15,6 +16,7 @@ lib/WWW/Shopify/Liquid/Filter/DividedBy.pm
 lib/WWW/Shopify/Liquid/Filter/Downcase.pm
 lib/WWW/Shopify/Liquid/Filter/Escape.pm
 lib/WWW/Shopify/Liquid/Filter/First.pm
+lib/WWW/Shopify/Liquid/Filter/Floor.pm
 lib/WWW/Shopify/Liquid/Filter/Handleize.pm
 lib/WWW/Shopify/Liquid/Filter/ImgTag.pm
 lib/WWW/Shopify/Liquid/Filter/Join.pm
@@ -76,6 +78,7 @@ lib/WWW/Shopify/Liquid/Operator/NotEquals.pm
 lib/WWW/Shopify/Liquid/Operator/Or.pm
 lib/WWW/Shopify/Liquid/Operator/Pipe.pm
 lib/WWW/Shopify/Liquid/Operator/Plus.pm
+lib/WWW/Shopify/Liquid/Operator/Regex.pm
 lib/WWW/Shopify/Liquid/Operator/With.pm
 lib/WWW/Shopify/Liquid/Optimizer.pm
 lib/WWW/Shopify/Liquid/Parser.pm
@@ -111,8 +114,11 @@ t/02parser_filter.t
 t/02parser_free.t
 t/02parser_lines.t
 t/02parser_nested.t
+t/02parser_new.t
 t/02parser_variables.t
 t/03optimizer.t
 t/03optimizer_comments.t
 t/04renderer.t
+t/04renderer_special.t
 t/05unpacker.t
+t/06examples.t

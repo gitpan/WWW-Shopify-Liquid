@@ -10,9 +10,12 @@ use base 'WWW::Shopify::Liquid::Pipeline';
 
 sub new { return bless { }, $_[0]; }
 
+use Clone qw(clone);
+
 sub optimize {
 	my ($self, $hash, $ast) = @_;
-	my $result = $ast->optimize($hash);
+	return undef unless $ast;
+	my $result = $ast->optimize(clone($hash));
 	return !ref($result) ? WWW::Shopify::Liquid::Token::Text->new(undef, $result) : $result;
 }
 
