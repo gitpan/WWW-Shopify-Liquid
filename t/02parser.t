@@ -57,5 +57,4 @@ $ast = $parser->parse_tokens($lexer->parse_text("{{ test_array[1].src }}"));
 ok($ast);
 isa_ok($ast, "WWW::Shopify::Liquid::Tag::Output");
 
-
 done_testing();

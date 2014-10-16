@@ -80,7 +80,7 @@ sub parse_filter_tokens {
 		my $i = 0;
 		@arguments = map { $self->parse_argument_tokens(grep { !$_->isa('WWW::Shopify::Liquid::Token::Separator') } @{$_}) } part { $i++ if $_->isa('WWW::Shopify::Liquid::Token::Separator') && $_->{core} eq ","; $i; } @tokens;
 	}
-	$filter = $filter_package->new($initial, @arguments);
+	$filter = $filter_package->new($initial->{line}, $initial, @arguments);
 	$filter->verify;
 	return $filter;
 }
@@ -89,6 +89,13 @@ use List::MoreUtils qw(part);
 # Similar, but doesn't deal with tags; deals solely with order of operations.
 sub parse_argument_tokens {
 	my ($self, @argument_tokens) = @_;
+	
+	# Preprocess all variant filters.
+	for my $variable (grep { $_->isa('WWW::Shopify::Liquid::Token::Variable') } @argument_tokens) {
+		my @core = @{$variable->{core}};
+		($variable->{core}->[$_]) = $self->parse_argument_tokens($core[$_]->members) for (grep { $core[$_]->isa('WWW::Shopify::Liquid::Token::Grouping') } 0..$#core);
+	}
+	
 	# First, pull together filters. These are the highest priority operators, after parentheses. They also have their own weird syntax.
 	my $top = undef;
 	
@@ -104,6 +111,8 @@ sub parse_argument_tokens {
 	}
 	
 	my @tops;
+	
+	
 	foreach my $partition (@partitions) {
 		my @tokens = @$partition;
 		#@tokens = (grep { !$_->isa('WWW::Shopify::Liquid::Token::Separator') } @tokens) if !$has_pipe;
@@ -145,7 +154,8 @@ sub parse_argument_tokens {
 		
 		die new WWW::Shopify::Liquid::Exception::Parser::Operands($tokens[0]) unless int(@tokens) == 1 || int(@tokens) == 0;
 		push(@tops, $tokens[0]);
-	}
+	}	
+	
 	return @tops;
 }
 
@@ -168,12 +178,13 @@ sub parse_tokens {
 				my $closed = undef;
 				for (0..$#tokens) {
 					if ($tokens[$_]->isa('WWW::Shopify::Liquid::Token::Tag')) {
-						if ($tokens[$_]->tag eq $token->tag) {
-							$level++;
+						if ($self->enclosing_tags->{$tokens[$_]->tag}) {
+							++$level;
 						} elsif (exists $allowed_internal_tags{$tokens[$_]->tag} && $level == 1) {
 							$tokens[$_]->{arguments} = [$self->parse_argument_tokens(@{$tokens[$_]->{arguments}})];
 							push(@internal, $_);
-						} elsif ($tokens[$_]->tag eq "end" . $token->tag && --$level == 0) {
+						} elsif ($tokens[$_]->tag eq "end" . $token->tag && $level == 1) {
+							--$level;
 							my $last_int = 0;
 							foreach my $int (@internal, $_) {
 								push(@contents, [splice(@tokens, 0, $int-$last_int)]);
@@ -193,6 +204,9 @@ sub parse_tokens {
 							shift(@tokens);
 							$closed = 1;
 							last;
+						} elsif ($tokens[$_]->tag =~ m/^end/) {
+							--$level;
+							# TODO: Fix this whole thing; right now, no close tags are being spit out for the wrong tag. We do this to avoid an {% unless %}{% if %}{% else %}{% endif %}{% endunless%} situtation.
 						}
 					}
 				}

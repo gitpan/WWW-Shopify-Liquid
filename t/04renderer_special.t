@@ -131,11 +131,13 @@ my $address = {
 
 use File::Slurp;
 # The version of this can change the MD5 hash, as it writes its version # into the first byte.
-use Storable qw(freeze);
-$Storable::canonical = 1;
 write_file("/tmp/test2", freeze($address));
 
-is($liquid->render_text({ customer => { default_address => $address } }, "{{ customer.default_address | md5 }}"), "dd243d6d424e6a788fa13b5fe8ab9c4f");
+use Storable qw(freeze);
+use Digest::MD5 qw(md5_hex);
+$Storable::canonical = 1;
+
+is($liquid->render_text({ customer => { default_address => $address } }, "{{ customer.default_address | md5 }}"), "1149cd1396304e6f9784751a8f61e839");
 
 is($liquid->render_text({ created_at => DateTime->now, updated_at => DateTime->now }, "{% if created_at == updated_at %}1{% else %}0{% endif %}"), 1);
 
@@ -148,5 +150,19 @@ is($liquid->render_text({}, "{% for line_item in order.line_items %}{% if line_i
 is($liquid->render_text({}, "{{ 'asfdsdfsa.jpg' | product_img_url: 'large' }}"), 'asfdsdfsa_large.jpg');
 
 is($liquid->render_text({ today => DateTime->today,  now => DateTime->now }, "{{ (now - today) / 3600 | floor }}"), int((DateTime->now->epoch - DateTime->today->epoch) / 3600));
+
+is($liquid->render_text({ a => undef }, "{% if a == null %}1{% endif %}"), '1');
+is($liquid->render_text({ a => 1 }, "{% if a == null %}1{% endif %}"), '');
+is($liquid->render_text({ }, "{% if 0 == null %}1{% endif %}"), '');
+is($liquid->render_text({ }, "{% assign b = 5 | plus: 5 %}{{ b }}"), '10');
+
+package A;
+sub new { return bless { }; }
+package main;
+
+# Blessedness should be preserved.
+($text, $hash) = $liquid->render_text({ l =>  A->new }, "{% assign b = l %}");
+ok($hash->{b});
+isa_ok($hash->{b}, 'A');
 
 done_testing();

@@ -32,6 +32,46 @@ isa_ok($ast->{contents}->{true_path}->{operands}->[0], 'WWW::Shopify::Liquid::Ta
 $ast = $parser->parse_tokens($lexer->parse_text('{% unless global.customer_address[customer.id] %}{% assign global.customer_address[customer.id] = json %}{% endunless %}'));
 ok($ast);
 
+
+use Data::Dumper;
 $ast = $parser->parse_tokens($lexer->parse_text('{% assign json = customer.addresses | json %}{% unless global.customer_address[customer.id] %}{% assign global.customer_address[customer.id] = json %}{% endunless %}{% if global.customer_address[customer.id] != json %}{% assign global.customer_address[customer.id] = json %}1{% else %}0{% endif %}'));
+ok($ast);
+
+$ast = $parser->parse_tokens($lexer->parse_text("{% capture name %}asdfsdf{% endcapture %}{{ name }}"));
+ok($ast);
+
+
+$ast = $parser->parse_tokens($lexer->parse_text('
+{% for line_item in order.line_items %}
+	{% if line_item.variant_id %}
+		{% assign product = line_item.product_id | escape %}
+		{% assign should_hide = 1 %}
+		{% for variant in product.variants %}
+			{% if variant.inventory_quantity == null or variant.inventory_quantity > 0 %}
+				{% assign should_hide = 0 %}
+			{% endif %}
+		{% endfor %}
+	{% endif %} 
+{% endfor %}
+{% if should_hide %}
+	{% assign updated_product = "Product" | escape %}
+	{% assign updated_product.published_at = now %}
+	{% assign updated_product = updated_product | escape %}
+{% endif %}
+'));
+ok($ast);
+
+$ast = $parser->parse_tokens($lexer->parse_text("{% assign color = 1 %}{% if color %}{{ variant['option' + color] }}{% endif %}"));
+
+ok($ast);
+ok($ast->{operands});
+ok($ast->{operands}->[1]);
+isa_ok($ast->{operands}->[1], 'WWW::Shopify::Liquid::Tag::If');
+isa_ok($ast->{operands}->[1]->{true_path}, 'WWW::Shopify::Liquid::Tag::Output');
+ok($ast->{operands}->[1]->{true_path}->{arguments});
+isa_ok($ast->{operands}->[1]->{true_path}->{arguments}->[0], 'WWW::Shopify::Liquid::Token::Variable');
+is(int(@{$ast->{operands}->[1]->{true_path}->{arguments}->[0]->{core}}), 2);
+isa_ok($ast->{operands}->[1]->{true_path}->{arguments}->[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::String');
+isa_ok($ast->{operands}->[1]->{true_path}->{arguments}->[0]->{core}->[1], 'WWW::Shopify::Liquid::Operator::Plus');
 
 done_testing();

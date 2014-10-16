@@ -53,4 +53,28 @@ is($tokens[5]->{line}->[1], 12);
 is(int(@tokens), 3);
 is(int(@{$tokens[0]->{arguments}}), 3);
 
+
+
+@tokens = $lexer->parse_text("{{ variant[1] }}");
+
+is(int(@tokens), 1);
+isa_ok($tokens[0]->{core}->[0], "WWW::Shopify::Liquid::Token::Variable");
+is(int(@{$tokens[0]->{core}->[0]->{core}}), 2);
+
+
+@tokens = $lexer->parse_text("{{ variant['option' + 1] }}");
+is(int(@tokens), 1);
+is(int(@{$tokens[0]->{core}}), 1);
+isa_ok($tokens[0]->{core}->[0], "WWW::Shopify::Liquid::Token::Variable");
+
+
+@tokens = $lexer->parse_text("{% assign color = 1 %}{% if color %}{{ variant['option' + color] }}{% endif %}");
+
+is(int(@tokens), 4);
+isa_ok($tokens[0], "WWW::Shopify::Liquid::Token::Tag");
+isa_ok($tokens[1], "WWW::Shopify::Liquid::Token::Tag");
+isa_ok($tokens[2], "WWW::Shopify::Liquid::Token::Output");
+isa_ok($tokens[3], "WWW::Shopify::Liquid::Token::Tag");
+
+
 done_testing();

@@ -7,7 +7,7 @@ package WWW::Shopify::Liquid::Tag;
 use base 'WWW::Shopify::Liquid::Element';
 
 sub inner_tags { return (); }
-sub name { my $package = ref($_[0]) ? ref($_[0]) : $_[0]; die unless $package =~ m/::(\w+)$/; return lc($1); }
+sub name { my $package = ref($_[0]) ? ref($_[0]) : $_[0]; die unless $package =~ m/::(\w+)$/; my $name = lc($1); $name =~ s/([A-Z])/_$1/g; return $name; }
 sub new { 
 	my ($package, $line, $tag, $arguments, $contents) = @_;
 	my $self = { line => $line, core => $tag, arguments => $arguments, contents => $contents };
@@ -34,7 +34,9 @@ sub new {
 sub process {
 	my ($self, $hash, $action) = @_;
 	return '' unless int(@{$self->{arguments}}) > 0;
-	return $self->{arguments}->[0]->$action($hash);
+	my $result = $self->{arguments}->[0]->$action($hash);
+	return '' if ref($result) && (ref($result) eq "ARRAY" || ref($result) eq "HASH");
+	return $result;
 }
 
 1;

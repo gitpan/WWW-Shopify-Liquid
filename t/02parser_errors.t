@@ -33,7 +33,7 @@ nadsljkfhlksjdfhkjsdhf
 		{{ customer.first_name }}
 		{{ customer.lastname }}
 {% endif %}
-" => ['WWW::Shopify::Liquid::Exception::Parser::NoClose', 2, 1],
+" => ['WWW::Shopify::Liquid::Exception::Parser::NoClose', 1, 0],
 "{% if customer
 	{{ customer.first_name }}
 	{{ customer.lastname }}
@@ -46,7 +46,10 @@ nadsljkfhlksjdfhkjsdhf
 	{{ customer.first_name + + 2 }}
 	{{ customer.lastname }}
 {% endif %}" => ['WWW::Shopify::Liquid::Exception::Parser::NakedInnerTag',1,0],
-"{{ sdff.hgdd 3 }}" => ['WWW::Shopify::Liquid::Exception::Parser::Operands', 1,0]
+"{{ sdff.hgdd 3 }}" => ['WWW::Shopify::Liquid::Exception::Parser::Operands', 1,0],
+"
+{{ a | date_math: '' }}
+", ['WWW::Shopify::Liquid::Exception::Parser::Arguments',2,0]
 );
 
 for (keys(%errors)) {

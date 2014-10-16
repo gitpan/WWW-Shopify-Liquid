@@ -4,18 +4,18 @@ author:
   - 'Adam Harrison (adamdharrison@gmail.com)'
 build_requires: {}
 configure_requires:
-  Module::Build: 0.38
+  Module::Build: '0.38'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4005, CPAN::Meta::Converter version 2.132830'
+generated_by: 'Module::Build version 0.4208, CPAN::Meta::Converter version 2.141520'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: WWW-Shopify-Liquid
 provides:
   WWW::Shopify::Liquid:
     file: lib/WWW/Shopify/Liquid.pm
-    version: 0.04
+    version: '0.05'
   WWW::Shopify::Liquid::Element:
     file: lib/WWW/Shopify/Liquid.pm
   WWW::Shopify::Liquid::Exception:
@@ -66,6 +66,8 @@ provides:
     file: lib/WWW/Shopify/Liquid/Filter/CustomerLoginLink.pm
   WWW::Shopify::Liquid::Filter::Date:
     file: lib/WWW/Shopify/Liquid/Filter/Date.pm
+  WWW::Shopify::Liquid::Filter::DateMath:
+    file: lib/WWW/Shopify/Liquid/Filter/DateMath.pm
   WWW::Shopify::Liquid::Filter::DefaultErrors:
     file: lib/WWW/Shopify/Liquid/Filter/DefaultErrors.pm
   WWW::Shopify::Liquid::Filter::DefaultPagination:
@@ -214,6 +216,8 @@ provides:
     file: lib/WWW/Shopify/Liquid.pm
   WWW::Shopify::Liquid::Renderer:
     file: lib/WWW/Shopify/Liquid/Renderer.pm
+  WWW::Shopify::Liquid::Renderer::NoClone:
+    file: lib/WWW/Shopify/Liquid/Renderer.pm
   WWW::Shopify::Liquid::Tag:
     file: lib/WWW/Shopify/Liquid/Tag.pm
   WWW::Shopify::Liquid::Tag::Assign:
@@ -279,16 +283,16 @@ provides:
   WWW::Shopify::Liquid::Token::Variable::Processing:
     file: lib/WWW/Shopify/Liquid/Lexer.pm
 requires:
-  Clone: 0
-  Data::Compare: 0
-  Devel::StackTrace: 0
-  Digest::MD5: 0
-  File::Slurp: 0
-  HTML::Strip: 0
-  JSON: 0
-  List::MoreUtils: 0
-  List::Util: 0
-  Module::Find: 0
-  Scalar::Util: 0
-  URI::Escape: 0
-version: 0.04
+  Clone: '0'
+  Data::Compare: '0'
+  Devel::StackTrace: '0'
+  Digest::MD5: '0'
+  File::Slurp: '0'
+  HTML::Strip: '0'
+  JSON: '0'
+  List::MoreUtils: '0'
+  List::Util: '0'
+  Module::Find: '0'
+  Scalar::Util: '0'
+  URI::Escape: '0'
+version: '0.05'

@@ -21,9 +21,9 @@ sub optimize { return shift->process(@_, "optimize"); }
 sub process { return $_[0]; }
 
 use List::Util qw(first);
-use Scalar::Util qw(looks_like_number);
+use Scalar::Util qw(looks_like_number blessed);
 
-sub is_processed { return !ref($_[1]) || (ref($_[1]) eq "ARRAY" && int(grep { !$_[0]->is_processed($_) } @{$_[1]}) == 0) || ref($_[1]) eq "HASH" || ref($_[1]) eq "DateTime"; }
+sub is_processed { return !ref($_[1]) || (ref($_[1]) eq "ARRAY" && int(grep { !$_[0]->is_processed($_) } @{$_[1]}) == 0) || ref($_[1]) eq "HASH" || (blessed($_[1]) && ref($_[1]) !~ m/^WWW::Shopify::Liquid/); }
 sub ensure_numerical { 
 	return $_[1] if defined $_[1] && looks_like_number($_[1]); 
 	return $_[1] if ref($_[1]) && ref($_[1]) eq "DateTime";
@@ -42,7 +42,7 @@ use List::MoreUtils qw(firstidx part);
 use List::Util qw(first);
 use Module::Find;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 NAME
 
@@ -259,7 +259,7 @@ Adam Harrison (adamdharrison@gmail.com)
 
 =head1 LICENSE
 
-Copyright (C) 2013 Adam Harrison
+Copyright (C) 2014 Adam Harrison
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

@@ -51,5 +51,37 @@ $text = liquid_render_text({
 is($text, 'asd');
 
 $text = liquid_render_text({ test_array => [{ src => "asdasf" }, { src => "dfhdfh" }, { src => "5135" }] }, "{{ test_array[1].src }}"); is($text, 'dfhdfh');
+$text = liquid_render_text({ test_array => 0 }, "{% if test_array == 0 %}a{% else %}b{% endif %}"); is($text, 'a');
+
+$text = liquid_render_text({}, "{% for a in (1..9) %}{% if a == 1 %}{{ a }}{% endif %}{% endfor %}"); is($text, '1');
+$text = liquid_render_text({}, "{% for a in (1..9) %}{{ forloop.index0 }}{% endfor %}"); is($text, '012345678');
+$text = liquid_render_text({}, "{% for a in (1..9) %}{{ forloop.index }}{% endfor %}"); is($text, '123456789');
+$text = liquid_render_text({}, "{% for a in (1..9) %}{% if forloop.first %}1{% endif %}{% endfor %}"); is($text, '1');
+$text = liquid_render_text({}, "{% for a in (1..9) %}{% unless a == 1 %}{{ a }}{% endunless %}{% endfor %}"); is($text, '23456789');
+$text = liquid_render_text({}, "{% for a in (1..9) %}{% unless forloop.first %}{{ a }}{% endunless %}{% endfor %}"); is($text, '23456789');
+
+$text = liquid_render_text({}, "{% capture name %}asdfsdf{% endcapture %}{{ name }}"); is($text, 'asdfsdf');
+
+# This failed with an elsif, but works with an else.
+my $template = "{{ line_item.sku }}{% for prop in line_item.properties %}{% if prop.name contains 'Size'%}{% if prop.value == 'Small/Medium' %}S{% elsif prop.value == 'Medium/Large' %}L{% endif %}{% endif %}{% endfor %}";
+$text = liquid_render_text({ line_item => { sku => "A", properties => [{ name => 'Dog 1 Size', value => "Small/Medium" }] }}, $template); is($text, 'AS');
+$text = liquid_render_text({ line_item => { sku => "A", properties => [{ name => 'Dog 1 Size', value => "Medium/Large" }] }}, $template); is($text, 'AL');
+
+use DateTime;
+my $now = DateTime->now;
+$text = liquid_render_text({ now => $now }, "{{ now | date_math: 3, 'days' }}"); is($text, $now->clone->add(days => 3)->iso8601);
+
+$text = liquid_render_text({ now => $now }, "{% if now < now | date_math: 3, 'days' %}ASD{% endif %}"); is($text, 'ASD');
+$text = liquid_render_text({ now => $now }, "{% if now < now  %}ASD{% endif %}"); is($text, '');
+
+$text = liquid_render_text({ now => $now }, "{% if now < now | date_math: -3, 'days' %}ASD{% endif %}"); is($text, '');
+
+my $hash; 
+eval { require 'WWW/Shopify.pm'; };
+if (!$@) {
+	print STDERR "Performing Shopify Test...\n";
+	($text, $hash) = liquid_render_text({ product => WWW::Shopify::Model::Product->new({ id => 1, variants => [WWW::Shopify::Model::Product::Variant->new({ inventory_quantity => 100 })] }) }, '{{ product.id }}');
+	is($text, 1);
+}
 
 done_testing();

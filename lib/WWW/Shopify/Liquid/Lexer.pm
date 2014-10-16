@@ -31,12 +31,13 @@ package WWW::Shopify::Liquid::Token::Variable;
 use base 'WWW::Shopify::Liquid::Token::Operand';
 
 use Data::Dumper;
-use Scalar::Util qw(looks_like_number);
+use Scalar::Util qw(looks_like_number reftype);
 
 sub new { my $package = shift; return bless { line => shift, core => [@_] }, $package; };
 sub process {
 	my ($self, $hash, $action) = @_;
 	my $place = $hash;
+	
 	return $self->{core} if $self->is_processed($self->{core});
 	foreach my $part (@{$self->{core}}) {
 		if (ref($part) eq 'WWW::Shopify::Liquid::Token::Variable::Processing') {
@@ -45,9 +46,9 @@ sub process {
 		else {
 			my $key = $self->is_processed($part) ? $part : $part->$action($hash);
 			return $self unless defined $key && $key ne '';
-			if (ref($place) eq "HASH" && exists $place->{$key}) {
+			if (reftype($place) && reftype($place) eq "HASH" && exists $place->{$key}) {
 				$place = $place->{$key};
-			} elsif (ref($place) eq "ARRAY" && looks_like_number($key) && defined $place->[$key]) {
+			} elsif (reftype($place) && reftype($place) eq "ARRAY" && looks_like_number($key) && defined $place->[$key]) {
 				$place = $place->[$key];
 			} else {
 				return $self;
@@ -148,7 +149,15 @@ sub parse_token {
 					elsif ($sym eq "]") {
 						@variables = $self->parse_expression($line, $contents);
 					}
-					push(@parts, @variables) if int(@variables) > 0;
+					if (int(@variables) > 0) {
+						if (int(@variables) == 1) {
+							push(@parts, @variables);
+						}
+						else {
+							push(@parts, WWW::Shopify::Liquid::Token::Grouping->new($line, @variables)) ;
+						}
+					}
+					
 				}
 			}
 			$start = $+[0] if $sym ne '"' && $sym ne "'" && !$open_bracket;
@@ -166,21 +175,23 @@ sub parse_expression {
 	my ($self, $line, $exp) = @_;
 	return () if !defined $exp || $exp eq '';
 	my @tokens = ();
-	my ($start_paren, $start_space, $level, $squot, $dquot) = (undef, 0, 0, 0, 0);
+	my ($start_paren, $start_space, $level, $squot, $dquot, $start_sq, $sq_level) = (undef, 0, 0, 0, 0, undef, 0);
 	# We regex along parentheses, quotation marks (both kinds), whitespace, and non-word-operators.
 	# We sort along length, so that we make sure to get all the largest operators first, so that way if a larger operator is made from a smaller one (=, ==)
 	# There's no confusion, we always try to match the largest first.
-	my $non_word_operators = join("|", map { quotemeta($_) } grep { $_ =~ m/^\W+$/; } sort { length($b) <=> length($a) } keys($self->operators));
-	while ($exp =~ m/(?:\(|\)|(?<!\\)"|(?<!\\)'|(\s+|$)|($non_word_operators|,|:))/g) {
+	my $non_word_operators = join("|", map { quotemeta($_) } grep { $_ =~ m/^\W+$/; } sort { length($b) <=> length($a) } keys(%{$self->operators}));
+	while ($exp =~ m/(?:\(|\)|\]|\[|(?<!\\)"|(?<!\\)'|(\s+|$)|($non_word_operators|,|:))/g) {
 		my ($rs, $re, $rc, $whitespace, $nword_op) = ($-[0], $+[0], $&, $1, $2);
 		if (!$squot && !$dquot) {
 			$start_paren = $re if $rc eq "(" && $level++ == 0;
+			$start_sq = $re if $rc eq "[" && $sq_level++ == 0;
 			# Deal with parentheses; always the highest level of operation.
 			if ($rc eq ")" && --$level == 0) {
 				$start_space = $re;
 				push(@tokens, WWW::Shopify::Liquid::Token::Grouping->new($line, $self->parse_expression($line, substr($exp, $start_paren, $rs - $start_paren))));
 			}
-			if ($level == 0) {
+			--$sq_level if $rc eq "]";
+			if ($level == 0 && $sq_level == 0) {
 				# If we're only spaces, that means we're a new a token.
 				if (defined $whitespace || $nword_op) {
 					if (defined $start_space) {
@@ -200,7 +211,7 @@ sub parse_expression {
 	my @ids = grep { 
 		$tokens[$_]->isa('WWW::Shopify::Liquid::Token::Number') &&
 		$tokens[$_-1]->isa('WWW::Shopify::Liquid::Token::Operator') && $tokens[$_-1]->{core} eq "-" &&
-		($_ == 1 || $tokens[$_-2]->isa('WWW::Shopify::Liquid::Token::Separator'))
+		($_ == 1 || $tokens[$_-2]->isa('WWW::Shopify::Liquid::Token::Separator') || $tokens[$_-2]->isa('WWW::Shopify::Liquid::Token::Operator'))
 	} 1..$#tokens;
 	for (@ids) { $tokens[$_]->{core} *= -1; $tokens[$_-1] = undef; } 
 	return grep { defined $_ } @tokens;

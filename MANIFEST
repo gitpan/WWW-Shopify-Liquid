@@ -10,6 +10,7 @@ lib/WWW/Shopify/Liquid/Filter/Ceil.pm
 lib/WWW/Shopify/Liquid/Filter/CollectionImgUrl.pm
 lib/WWW/Shopify/Liquid/Filter/CustomerLoginLink.pm
 lib/WWW/Shopify/Liquid/Filter/Date.pm
+lib/WWW/Shopify/Liquid/Filter/DateMath.pm
 lib/WWW/Shopify/Liquid/Filter/DefaultErrors.pm
 lib/WWW/Shopify/Liquid/Filter/DefaultPagination.pm
 lib/WWW/Shopify/Liquid/Filter/DividedBy.pm
@@ -122,3 +123,5 @@ t/04renderer.t
 t/04renderer_special.t
 t/05unpacker.t
 t/06examples.t
+t/07regex.t
+t/08filters.t

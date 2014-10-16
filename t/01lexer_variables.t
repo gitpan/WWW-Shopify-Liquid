@@ -9,6 +9,7 @@ use_ok("WWW::Shopify::Liquid::Lexer");
 my $lexer = WWW::Shopify::Liquid->new->lexer;
 
 my @tokens = $lexer->parse_text('{{ product.handle }}');
+
 is(int(@tokens), 1);
 isa_ok($tokens[0], 'WWW::Shopify::Liquid::Token::Output');
 is(int(@{$tokens[0]->{core}}), 1);
@@ -18,6 +19,7 @@ isa_ok($tokens[0]->{core}->[0]->{core}->[0], 'WWW::Shopify::Liquid::Token::Strin
 isa_ok($tokens[0]->{core}->[0]->{core}->[1], 'WWW::Shopify::Liquid::Token::String');
 
 @tokens = $lexer->parse_text("{{ customer['test']['b'] }}");
+
 is(int(@tokens), 1);
 isa_ok($tokens[0], 'WWW::Shopify::Liquid::Token::Output');
 is(int(@{$tokens[0]->{core}}), 1);

@@ -31,7 +31,8 @@ sub interpret_inner_tokens {
 	if (int(@tokens) > 0) {
 		die new WWW::Shopify::Liquid::Exception::Parser($self, "else cannot be anywhere, except the end tag of an if statement.") if $tokens[0]->[0]->tag eq "else" && int(@tokens) > 1;
 		if ($tokens[0]->[0]->tag eq "elsif") {
-			$self->{false_path} = WWW::Shopify::Liquid::Tag::If->new($tokens[0]->[0]->{line}, "if", $tokens[0]->[0]->{arguments}, [@tokens[1..$#tokens]]);
+			my @inner_tokens = @{$tokens[0]};
+			$self->{false_path} = WWW::Shopify::Liquid::Tag::If->new($tokens[0]->[0]->{line}, "if", shift(@inner_tokens)->{arguments}, [\@inner_tokens]);
 		}
 		else {
 			$self->{false_path} = $tokens[0]->[1];

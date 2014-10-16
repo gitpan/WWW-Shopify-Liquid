@@ -45,6 +45,15 @@ ok($arg);
 
 ok($liquid->parser->parse_argument_tokens($liquid->lexer->parse_expression(1, "variant.option2 == \"asbsa\"")));
 
+my $template = "{% for prop in line_item.properties %}{% if prop.name contains 'Size'%}{% if prop.value == 'Small/Medium' %}S{% elsif prop.value == 'Medium/Large' %}L{% endif %}{% endif %}{% endfor %}";
+$ast = $parser->parse_tokens($lexer->parse_text($template));
+ok($ast);
+isa_ok($ast->{contents}, 'WWW::Shopify::Liquid::Tag::If');
+isa_ok($ast->{contents}->{true_path}, 'WWW::Shopify::Liquid::Tag::If');
+isa_ok($ast->{contents}->{true_path}->{true_path}, 'WWW::Shopify::Liquid::Token::Text');
+isa_ok($ast->{contents}->{true_path}->{false_path}, 'WWW::Shopify::Liquid::Tag::If');
+isa_ok($ast->{contents}->{true_path}->{false_path}->{true_path}, 'WWW::Shopify::Liquid::Token::Text');
+
 done_testing();
 
 

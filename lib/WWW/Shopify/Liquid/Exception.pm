@@ -18,7 +18,7 @@ sub new {
 		stack => Devel::StackTrace->new,
 	}, $package;
 	if (blessed($line)) {
-		if ($line->isa('WWW::Shopify::Liquid::Tag') || $line->isa('WWW::Shopify::Liquid::Token') || $line->isa('WWW::Shopify::Liquid::Operator')) {
+		if ($line->isa('WWW::Shopify::Liquid::Tag') || $line->isa('WWW::Shopify::Liquid::Token') || $line->isa('WWW::Shopify::Liquid::Operator') || $line->isa('WWW::Shopify::Liquid::Filter')) {
 			$self->{token} = $line;
 			$line = $line->{line};
 		}

@@ -10,7 +10,7 @@ use base 'WWW::Shopify::Liquid::Element';
 
 use List::Util qw(first);
 
-sub new { my $package = shift; return bless { operand => shift, arguments => [@_] }, $package; }
+sub new { my $package = shift; return bless { line => shift, operand => shift, arguments => [@_] }, $package; }
 # Determines whether or not this acts as a variable with no arguments, when used in conjucntion to a dot on a variable.
 sub transparent { return 0; }
 sub name { my $package = ref($_[0]) ? ref($_[0]) : $_[0]; $package =~ s/^.*:://; $package =~ s/([a-z])([A-Z])/$1_$2/g; return lc($package);  }

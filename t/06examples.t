@@ -74,4 +74,28 @@ my $result = $liquid->render_ast({ order => {
 } }, $ast);
 is($result, ('$ ' . '' . (10+(10*2)+20-1)));
 
+my $mountain = "{% unless product.tags contains 'pre-sale' %}
+	{% if product.published_at %}
+		{% for variant in product.variants %}{% assign a = 1 %}{% if variant.inventory_quantity == null or variant.inventory_quantity > 0 %}{% assign a = 0 %}{% endif %}{% endfor %}{{ a }}
+	{% else %}
+		{% for variant in product.variants %}{% if variant.inventory_quantity and variant.inventory_quantity > 0 %}1{% endif %}{% endfor %}
+	{% endif %}
+{% endunless %}";
+$ast = $parser->parse_tokens($lexer->parse_text($mountain));
+ok($ast);
+
+my $text = $liquid->render_text({ product => {
+	tags => "test, asd3, asiojdofs, 43266356, adfssdf, 139847, tags, tag2, 2teasf, thirdtag, 100"
+} }, "{% assign tags = product.tags | split: ', ' %}{% assign is_first = 1 %}{% for tag in tags %}{% if tag =~ '^\\d+\$' %}{% unless is_first %}, {% endunless %}{% assign is_first = 0 %}{{ tag }}{% endif %}{% endfor %}");
+is($text, "43266356, 139847, 100");
+
+$text = $liquid->render_text({ 
+	variant => { id => 1, option1 => "Red", option2 => "Large", option3 => "Silk"},
+	product => {
+		variants => [{ id => 1, option1 => "Red", option2 => "Large", option3 => "Silk"}],
+		options => [{ name => "Material", position => 3 }, { name => "Color", position => 1 }, { name => "Size", position => 2 }]
+	}
+}, "{% assign color = 1 %}{% if color %}{{ variant['option' + color] }}{% else %}B{% endif %}");
+is($text, "Red");
+
 done_testing();
